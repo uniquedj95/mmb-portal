@@ -1,2 +1,4 @@
 # mmb-portal
-Mizu Micro Bank Web App
+Mizu Micro Bank Admin Portal
+
+
