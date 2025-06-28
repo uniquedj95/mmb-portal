@@ -81,8 +81,8 @@ function resetForm(formEl: FormInstance | undefined) {
   <el-container class="outer-wrapper">
     <el-row class="inner-wrapper">
       <el-col :span="12" class="logo-section">
-        <el-image class="logo" src="/assets/images/wallet-logo.svg" />
-        <h3>Mizu Microfinance Bank</h3>
+        <el-image class="logo" src="/assets/images/logo.png" />
+        <h3>Mizu Micro Bank</h3>
         <p class="text-center">Admin Portal - Manage loans, transactions, and member accounts.</p>
       </el-col>
       <el-col :span="12" class="form-section">
@@ -178,7 +178,7 @@ function resetForm(formEl: FormInstance | undefined) {
 }
 
 .logo {
-  width: 430px;
+  width: 130px;
   height: auto;
 }
 
