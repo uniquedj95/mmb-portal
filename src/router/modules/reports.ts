@@ -11,32 +11,23 @@ const ReportsRoutes: RouteRecordRaw = {
   },
   children: [
     {
-      path: '',
-      component: () => import('../../views/reports/ReportsDashboard.vue'),
-      name: 'ReportsDashboard',
+      path: 'financial',
+      component: () => import('../../views/reports/FinancialReports.vue'),
+      name: 'FinancialReports',
       meta: {
-        title: 'Reports Dashboard',
+        title: 'Financial Reports',
         roles: ['admin'],
       }
     },
-    // {
-    //   path: 'financial',
-    //   component: () => import('../../views/reports/FinancialReports.vue'),
-    //   name: 'FinancialReports',
-    //   meta: {
-    //     title: 'Financial Reports',
-    //     roles: ['admin'],
-    //   }
-    // },
-    // {
-    //   path: 'audit',
-    //   component: () => import('../../views/reports/AuditLogs.vue'),
-    //   name: 'AuditLogs',
-    //   meta: {
-    //     title: 'Audit Logs',
-    //     roles: ['admin'],
-    //   }
-    // }
+    {
+      path: 'audit',
+      component: () => import('../../views/reports/AuditLogs.vue'),
+      name: 'AuditLogs',
+      meta: {
+        title: 'Audit Logs',
+        roles: ['admin'],
+      }
+    }
   ]
 };
 
