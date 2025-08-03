@@ -54,30 +54,30 @@
         style="width: 100%"
         v-loading="loading"
       >
-        <el-table-column prop="id" label="Transaction ID" width="180" />
-        <el-table-column prop="type" label="Type" width="150">
+        <el-table-column prop="id" label="Transaction ID"/>
+        <el-table-column prop="type" label="Type">
           <template #default="scope">
             <el-tag :type="getTransactionTypeColor(scope.row.type)">
               {{ formatTransactionType(scope.row.type) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="amount" label="Amount" width="150">
+        <el-table-column prop="amount" label="Amount">
           <template #default="scope">
             {{ formatCurrency(scope.row.amount ?? 0) }}
           </template>
         </el-table-column>
-        <el-table-column prop="user.name" label="User" width="180">
+        <el-table-column prop="user.name" label="User">
           <template #default="scope">
             {{ scope.row.user?.name }}
           </template>
         </el-table-column>
-        <el-table-column prop="group.name" label="Group" width="180">
+        <el-table-column prop="group.name" label="Group">
           <template #default="scope">
             {{ scope.row.group?.name || 'N/A' }}
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="Status" width="120">
+        <el-table-column prop="status" label="Status" >
           <template #default="scope">
             <el-tag :type="getStatusColor(scope.row.status)">
               {{ scope.row.status }}
@@ -89,7 +89,7 @@
             {{ toDisplayDate(scope.row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="Actions" fixed="right" width="200">
+        <el-table-column label="Actions" fixed="right" >
           <template #default="scope">
             <el-button
               v-if="scope.row.status === 'PENDING'"

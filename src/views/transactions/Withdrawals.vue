@@ -35,20 +35,20 @@
         style="width: 100%"
         v-loading="loading"
       >
-        <el-table-column prop="transactionId" label="Transaction ID" width="180" />
+        <el-table-column prop="id" label="Transaction ID" width="180" />
         <el-table-column prop="amount" label="Amount" width="150">
           <template #default="scope">
             {{ formatCurrency(scope.row.amount ?? 0) }}
           </template>
         </el-table-column>
-        <el-table-column prop="account.user.firstName" label="User" width="180">
+        <el-table-column prop="user.name" label="User" width="180">
           <template #default="scope">
-            {{ scope.row.account?.user?.firstName }} {{ scope.row.account?.user?.lastName }}
+            {{ scope.row.user?.name }}
           </template>
         </el-table-column>
-        <el-table-column prop="account.group.name" label="Group" width="180">
+        <el-table-column prop="group.name" label="Group" width="180">
           <template #default="scope">
-            {{ scope.row.account?.group?.name }}
+            {{ scope.row.group?.name || 'N/A' }}
           </template>
         </el-table-column>
         <el-table-column prop="status" label="Status" width="120">
@@ -128,12 +128,16 @@ const transactionService = new TransactionService();
 const fetchWithdrawals = async () => {
   loading.value = true;
   try {
-    withdrawals.value = await transactionService.getWithdrawals({
+    const response = await transactionService.getWithdrawals({
       page: currentPage.value,
       limit: pageSize.value,
-      status: statusFilter.value
+      status: statusFilter.value,
+      search: searchQuery.value
     });
-    total.value = 0;
+    withdrawals.value = response.data;
+    total.value = response.meta.totalItems;
+    currentPage.value = response.meta.currentPage;
+    pageSize.value = response.meta.pageSize;
   } catch (error) {
     ElMessage.error('Failed to fetch withdrawals');
   } finally {
@@ -209,11 +213,13 @@ const rejectWithdrawal = async (withdrawal: Transaction) => {
 const viewDetails = (withdrawal: Transaction) => {
   ElMessageBox.alert(
     `
-    <p><strong>Transaction ID:</strong> ${withdrawal.transactionId}</p>
+    <p><strong>Transaction ID:</strong> ${withdrawal.id}</p>
     <p><strong>Amount:</strong> ${formatCurrency(withdrawal.amount)}</p>
     <p><strong>Status:</strong> ${withdrawal.status}</p>
     <p><strong>Date:</strong> ${toDisplayDate(withdrawal.createdAt)}</p>
-    <p><strong>Description:</strong> ${withdrawal.description || 'No description'}</p>
+    <p><strong>Reference:</strong> ${withdrawal.reference || 'No reference'}</p>
+    <p><strong>User:</strong> ${withdrawal.user?.name}</p>
+    <p><strong>Group:</strong> ${withdrawal.group?.name || 'N/A'}</p>
     `,
     'Withdrawal Details',
     {

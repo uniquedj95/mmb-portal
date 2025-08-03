@@ -35,35 +35,35 @@
         style="width: 100%"
         v-loading="loading"
       >
-        <el-table-column prop="transactionId" label="Transaction ID" width="180" />
-        <el-table-column prop="amount" label="Amount" width="150">
+        <el-table-column prop="id" label="Transaction ID" />
+        <el-table-column prop="amount" label="Amount">
           <template #default="scope">
             {{ formatCurrency(scope.row.amount ?? 0) }}
           </template>
         </el-table-column>
-        <el-table-column prop="account.user.firstName" label="User" width="180">
+        <el-table-column prop="user.name" label="User">
           <template #default="scope">
-            {{ scope.row.account?.user?.firstName }} {{ scope.row.account?.user?.lastName }}
+            {{ scope.row.user?.name }}
           </template>
         </el-table-column>
-        <el-table-column prop="account.group.name" label="Group" width="180">
+        <el-table-column prop="group.name" label="Group">
           <template #default="scope">
-            {{ scope.row.account?.group?.name }}
+            {{ scope.row.group?.name || 'N/A' }}
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="Status" width="120">
+        <el-table-column prop="status" label="Status">
           <template #default="scope">
             <el-tag :type="getStatusColor(scope.row.status)">
               {{ scope.row.status }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="Date" width="180">
+        <el-table-column prop="createdAt" label="Date">
           <template #default="scope">
-            {{ formatDate(scope.row.createdAt) }}
+            {{ toDisplayDate(scope.row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="Actions" fixed="right" width="200">
+        <el-table-column label="Actions" fixed="right">
           <template #default="scope">
             <el-button
               v-if="scope.row.status === 'PENDING'"
@@ -113,7 +113,7 @@ import { ref, onMounted } from 'vue';
 import { ElMessage, ElMessageBox, ElCard, ElPagination } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
 import { formatCurrency } from '../../utils/strs';
-import { transactionsApi, type Transaction } from '../../api/transactions';
+import TransactionService, { type Transaction } from '../../services/transactions';
 import { toDisplayDate } from '../../utils/date';
 
 const deposits = ref<Transaction[]>([]);
@@ -124,16 +124,21 @@ const total = ref(0);
 const searchQuery = ref('');
 const statusFilter = ref('');
 
+const transactionService = new TransactionService();
+
 const fetchDeposits = async () => {
   loading.value = true;
   try {
-    const data = await transactionsApi.getDeposits({
+    const response = await transactionService.getDeposits({
       page: currentPage.value,
       limit: pageSize.value,
-      status: statusFilter.value
+      status: statusFilter.value,
+      search: searchQuery.value
     });
-    deposits.value = data.data;
-    total.value = data.meta.totalItems;
+    deposits.value = response.data;
+    total.value = response.meta.totalItems;
+    currentPage.value = response.meta.currentPage;
+    pageSize.value = response.meta.pageSize;
   } catch (error) {
     ElMessage.error('Failed to fetch deposits');
   } finally {
@@ -173,7 +178,7 @@ const approveDeposit = async (deposit: Transaction) => {
       }
     );
     
-    await transactionsApi.approveTransaction(deposit.id);
+    await transactionService.approveTransaction(deposit.id);
     ElMessage.success('Deposit approved successfully');
     fetchDeposits();
   } catch (error: any) {
@@ -196,7 +201,7 @@ const rejectDeposit = async (deposit: Transaction) => {
       }
     );
     
-    await transactionsApi.rejectTransaction(deposit.id, reason);
+    await transactionService.rejectTransaction(deposit.id, reason);
     ElMessage.success('Deposit rejected successfully');
     fetchDeposits();
   } catch (error: any) {
@@ -210,11 +215,13 @@ const viewDetails = (deposit: Transaction) => {
   // This would typically navigate to a deposit details view
   ElMessageBox.alert(
     `
-    <p><strong>Transaction ID:</strong> ${deposit.transactionId}</p>
+    <p><strong>Transaction ID:</strong> ${deposit.id}</p>
     <p><strong>Amount:</strong> ${ formatCurrency(deposit.amount ?? 0)}</p>
     <p><strong>Status:</strong> ${deposit.status}</p>
     <p><strong>Date:</strong> ${ toDisplayDate(deposit.createdAt)}</p>
-    <p><strong>Description:</strong> ${deposit.description || 'No description'}</p>
+    <p><strong>Reference:</strong> ${deposit.reference || 'No reference'}</p>
+    <p><strong>User:</strong> ${deposit.user?.name}</p>
+    <p><strong>Group:</strong> ${deposit.group?.name || 'N/A'}</p>
     `,
     'Deposit Details',
     {
