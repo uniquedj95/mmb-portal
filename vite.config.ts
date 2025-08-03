@@ -10,5 +10,24 @@ export default defineConfig({
         "@": fileURLToPath(new URL("./src", import.meta.url)),
         'fast-deep-equal': 'fast-deep-equal/es6',
     },
-},
+  },
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+    minify: 'terser',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['vue', 'vue-router'],
+          elementPlus: ['element-plus'],
+          echarts: ['echarts']
+        }
+      }
+    }
+  },
+  server: {
+    port: 3000,
+    host: true
+  }
 })

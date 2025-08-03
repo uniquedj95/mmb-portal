@@ -1,0 +1,73 @@
+name: Deploy Portal to VPS
+
+on:
+  push:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build for production
+      run: npm run build
+      env:
+        VITE_API_BASE_URL: ${{ secrets.API_BASE_URL }}
+
+    - name: Deploy to VPS
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USERNAME }}
+        key: ${{ secrets.VPS_PRIVATE_KEY }}
+        port: ${{ secrets.VPS_PORT || 22 }}
+        script: |
+          # Navigate to portal directory
+          cd /var/www/mmb-portal
+          
+          # Pull latest changes
+          git pull origin master
+          
+          # Install dependencies
+          npm install
+          
+          # Build for production
+          npm run build
+          
+          # Set proper permissions
+          sudo chown -R www-data:www-data dist/
+          sudo chmod -R 755 dist/
+          
+          # Test nginx configuration
+          sudo nginx -t
+          
+          # Reload nginx if config is valid
+          if [ $? -eq 0 ]; then
+            sudo systemctl reload nginx
+            echo "✅ Portal deployed successfully!"
+          else
+            echo "❌ Nginx configuration error!"
+            exit 1
+          fi
+
+    - name: Notify deployment status
+      if: always()
+      run: |
+        if [ ${{ job.status }} == 'success' ]; then
+          echo "🎉 Portal deployment completed successfully!"
+        else
+          echo "❌ Portal deployment failed!"
+        fi
