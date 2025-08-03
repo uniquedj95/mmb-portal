@@ -26,7 +26,7 @@
         </el-table-column>
         <el-table-column prop="amount" label="Amount" width="150">
           <template #default="scope">
-            GHS {{ scope.row.amount?.toLocaleString() }}
+            {{ formatCurrency(scope.row.amount ?? 0) }}
           </template>
         </el-table-column>
         <el-table-column prop="account.user.firstName" label="User" width="180">
@@ -41,7 +41,7 @@
         </el-table-column>
         <el-table-column prop="createdAt" label="Date" width="180">
           <template #default="scope">
-            {{ formatDate(scope.row.createdAt) }}
+            {{ toDisplayDate(scope.row.createdAt) }}
           </template>
         </el-table-column>
         <el-table-column label="Actions" fixed="right" width="200">
@@ -84,7 +84,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { formatCurrency } from '../../utils/strs';
 import { transactionsApi, type Transaction } from '../../api/transactions';
+import { toDisplayDate } from '../../utils/date';
 
 const transactions = ref<Transaction[]>([]);
 const loading = ref(false);
@@ -118,7 +120,7 @@ const handleCurrentChange = (val: number) => {
 const approveTransaction = async (transaction: Transaction) => {
   try {
     await ElMessageBox.confirm(
-      `Are you sure you want to approve this ${formatTransactionType(transaction.type)} transaction for GHS ${transaction.amount}?`,
+      `Are you sure you want to approve this ${formatTransactionType(transaction.type)} transaction for ${formatCurrency(transaction.amount)}?`,
       'Approve Transaction',
       {
         confirmButtonText: 'Approve',
@@ -181,10 +183,6 @@ const getTransactionTypeColor = (type: string) => {
 
 const formatTransactionType = (type: string) => {
   return type?.replace(/_/g, ' ');
-};
-
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleString();
 };
 
 onMounted(() => {

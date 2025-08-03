@@ -198,7 +198,7 @@ const handleCurrentChange = (val: number) => {
 const approveTransaction = async (transaction: Transaction) => {
   try {
     await ElMessageBox.confirm(
-      `Are you sure you want to approve this ${formatTransactionType(transaction.type)} transaction for GHS ${transaction.amount}?`,
+      `Are you sure you want to approve this ${formatTransactionType(transaction.type)} transaction for ${formatCurrency(transaction.amount)}?`,
       'Approve Transaction',
       {
         confirmButtonText: 'Approve',

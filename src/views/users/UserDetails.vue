@@ -84,7 +84,7 @@
               </el-table-column>
               <el-table-column prop="amount" label="Amount" width="150">
                 <template #default="scope">
-                  GHS {{ scope.row.amount?.toLocaleString() }}
+                  {{ formatCurrency(scope.row.amount) }}
                 </template>
               </el-table-column>
               <el-table-column prop="status" label="Status" width="120">
@@ -96,7 +96,7 @@
               </el-table-column>
               <el-table-column prop="createdAt" label="Date" width="180">
                 <template #default="scope">
-                  {{ formatDate(scope.row.createdAt) }}
+                  {{ toDisplayDate(scope.row.createdAt) }}
                 </template>
               </el-table-column>
             </el-table>
@@ -112,11 +112,11 @@
               </div>
               <div class="stat-item">
                 <span class="stat-label">Total Savings</span>
-                <span class="stat-value">GHS {{ userStats.totalSavings?.toLocaleString() || '0' }}</span>
+                <span class="stat-value"> {{ formatCurrency(userStats.totalSavings) }}</span>
               </div>
               <div class="stat-item">
                 <span class="stat-label">Total Loans</span>
-                <span class="stat-value">GHS {{ userStats.totalLoans?.toLocaleString() || '0' }}</span>
+                <span class="stat-value"> {{ formatCurrency(userStats.totalLoans) }}</span>
               </div>
               <div class="stat-item">
                 <span class="stat-label">Credit Score</span>
@@ -142,6 +142,8 @@ import { ArrowLeft } from '@element-plus/icons-vue';
 import UserService, { type User } from '../../services/users';
 import { Group } from '../../services/groups';
 import { Transaction } from '../../services/transactions';
+import { toDisplayDate } from '../../utils/date';
+import { formatCurrency } from '../../utils/strs';
 
 const route = useRoute();
 const router = useRouter();

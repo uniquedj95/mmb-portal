@@ -38,7 +38,7 @@
         <el-table-column prop="transactionId" label="Transaction ID" width="180" />
         <el-table-column prop="amount" label="Amount" width="150">
           <template #default="scope">
-            GHS {{ scope.row.amount?.toLocaleString() }}
+            {{ formatCurrency(scope.row.amount ?? 0) }}
           </template>
         </el-table-column>
         <el-table-column prop="account.user.firstName" label="User" width="180">
@@ -110,9 +110,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { ElMessage, ElMessageBox, ElCard, ElPagination } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
+import { formatCurrency } from '../../utils/strs';
 import { transactionsApi, type Transaction } from '../../api/transactions';
+import { toDisplayDate } from '../../utils/date';
 
 const deposits = ref<Transaction[]>([]);
 const loading = ref(false);
@@ -162,7 +164,7 @@ const handleCurrentChange = (val: number) => {
 const approveDeposit = async (deposit: Transaction) => {
   try {
     await ElMessageBox.confirm(
-      `Are you sure you want to approve this deposit of GHS ${deposit.amount}?`,
+      `Are you sure you want to approve this deposit of ${formatCurrency(deposit.amount)}?`,
       'Approve Deposit',
       {
         confirmButtonText: 'Approve',
@@ -209,9 +211,9 @@ const viewDetails = (deposit: Transaction) => {
   ElMessageBox.alert(
     `
     <p><strong>Transaction ID:</strong> ${deposit.transactionId}</p>
-    <p><strong>Amount:</strong> GHS ${deposit.amount}</p>
+    <p><strong>Amount:</strong> ${ formatCurrency(deposit.amount ?? 0)}</p>
     <p><strong>Status:</strong> ${deposit.status}</p>
-    <p><strong>Date:</strong> ${formatDate(deposit.createdAt)}</p>
+    <p><strong>Date:</strong> ${ toDisplayDate(deposit.createdAt)}</p>
     <p><strong>Description:</strong> ${deposit.description || 'No description'}</p>
     `,
     'Deposit Details',
@@ -235,10 +237,6 @@ const getStatusColor = (status: string) => {
     default:
       return '';
   }
-};
-
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleString();
 };
 
 onMounted(() => {

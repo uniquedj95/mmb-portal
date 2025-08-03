@@ -38,7 +38,7 @@
         <el-table-column prop="transactionId" label="Transaction ID" width="180" />
         <el-table-column prop="amount" label="Amount" width="150">
           <template #default="scope">
-            GHS {{ scope.row.amount?.toLocaleString() }}
+            {{ formatCurrency(scope.row.amount ?? 0) }}
           </template>
         </el-table-column>
         <el-table-column prop="account.user.firstName" label="User" width="180">
@@ -60,7 +60,7 @@
         </el-table-column>
         <el-table-column prop="createdAt" label="Date" width="180">
           <template #default="scope">
-            {{ formatDate(scope.row.createdAt) }}
+            {{ toDisplayDate(scope.row.createdAt) }}
           </template>
         </el-table-column>
         <el-table-column label="Actions" fixed="right" width="200">
@@ -113,6 +113,8 @@ import { ref, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
 import TransactionService, { type Transaction } from '../../services/transactions';
+import { toDisplayDate } from '../../utils/date';
+import { formatCurrency } from '../../utils/strs';
 
 const withdrawals = ref<Transaction[]>([]);
 const loading = ref(false);
@@ -162,7 +164,7 @@ const handleCurrentChange = (val: number) => {
 const approveWithdrawal = async (withdrawal: Transaction) => {
   try {
     await ElMessageBox.confirm(
-      `Are you sure you want to approve this withdrawal of GHS ${withdrawal.amount}?`,
+      `Are you sure you want to approve this withdrawal of ${formatCurrency(withdrawal.amount)}?`,
       'Approve Withdrawal',
       {
         confirmButtonText: 'Approve',
@@ -208,9 +210,9 @@ const viewDetails = (withdrawal: Transaction) => {
   ElMessageBox.alert(
     `
     <p><strong>Transaction ID:</strong> ${withdrawal.transactionId}</p>
-    <p><strong>Amount:</strong> GHS ${withdrawal.amount}</p>
+    <p><strong>Amount:</strong> ${formatCurrency(withdrawal.amount)}</p>
     <p><strong>Status:</strong> ${withdrawal.status}</p>
-    <p><strong>Date:</strong> ${formatDate(withdrawal.createdAt)}</p>
+    <p><strong>Date:</strong> ${toDisplayDate(withdrawal.createdAt)}</p>
     <p><strong>Description:</strong> ${withdrawal.description || 'No description'}</p>
     `,
     'Withdrawal Details',
@@ -234,10 +236,6 @@ const getStatusColor = (status: string) => {
     default:
       return '';
   }
-};
-
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleString();
 };
 
 onMounted(() => {
