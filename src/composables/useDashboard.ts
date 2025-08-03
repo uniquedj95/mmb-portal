@@ -1,4 +1,5 @@
 import { ref, computed, onMounted } from "vue";
+import ApiClient from "../api/index";
 
 export interface DashboardStatistic {
   id: string;
@@ -65,7 +66,7 @@ export function useDashboard() {
       color: '#F56C6C',
       change: '+15%',
       changeType: 'increase',
-      prefix: 'GHS ',
+      prefix: 'K ',
       loading: true
     }
   ]);
@@ -74,38 +75,20 @@ export function useDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      // Simulate API call - replace with actual API endpoint
-      const response = await fetch('/api/dashboard/stats');
-      if (response.ok) {
-        const text = await response.text();
-        if (!text) {
-          throw new Error('Empty response');
-        }
-        
-        // Check if response is JSON
-        let data: DashboardStats;
-        try {
-          data = JSON.parse(text);
-        } catch (parseError) {
-          console.error('Invalid JSON response:', text);
-          throw new Error('Invalid JSON response');
-        }
-        
-        // Update statistics with real data
-        statistics.value = statistics.value.map(stat => ({
-          ...stat,
-          value: {
-            'total-users': data.totalUsers,
-            'total-groups': data.totalGroups,
-            'pending-approvals': data.pendingGroups + data.pendingTransactions,
-            'total-savings': data.totalSavings
-          }[stat.id] || 0,
-          loading: false
-        }));
-      } else {
-        // Fallback to demo data
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+      // Fetch dashboard stats using API client
+      const data: DashboardStats = await ApiClient.getJson('/dashboard/stats');
+      
+      // Update statistics with real data
+      statistics.value = statistics.value.map(stat => ({
+        ...stat,
+        value: {
+          'total-users': data.totalUsers,
+          'total-groups': data.totalGroups,
+          'pending-approvals': data.pendingGroups + data.pendingTransactions,
+          'total-savings': data.totalSavings
+        }[stat.id] || 0,
+        loading: false
+      }));
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
       // Fallback to demo data
@@ -140,11 +123,6 @@ export function useDashboard() {
   const totalSavings = computed(
     () => statistics.value.find((stat) => stat.id === "total-savings")?.value || 0
   );
-
-  // Initialize data on component mount
-  onMounted(() => {
-    fetchDashboardData();
-  });
 
   return {
     isLoading,

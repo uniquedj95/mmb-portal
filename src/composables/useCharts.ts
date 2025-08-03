@@ -1,5 +1,6 @@
 import { ref } from 'vue';
 import * as echarts from 'echarts';
+import ApiClient from '../api/index';
 
 export const useCharts = () => {
   const loanChartRef = ref<HTMLDivElement>();
@@ -29,24 +30,7 @@ export const useCharts = () => {
   const updateLoanChart = async () => {
     try {
       // Fetch all loans
-      const response = await fetch('/api/loans');
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      const text = await response.text();
-      if (!text) {
-        throw new Error('Empty response');
-      }
-      
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (parseError) {
-        console.error('Invalid JSON response for loans:', text);
-        throw new Error('Invalid JSON response');
-      }
+      const data = await ApiClient.getJson('/loans');
       
       const loans = data.data || [];
       
@@ -167,24 +151,7 @@ export const useCharts = () => {
   const updateSavingsChart = async () => {
     try {
       // Fetch all deposits
-      const response = await fetch('/api/transactions?type=DEPOSIT');
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      const text = await response.text();
-      if (!text) {
-        throw new Error('Empty response');
-      }
-      
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (parseError) {
-        console.error('Invalid JSON response for savings:', text);
-        throw new Error('Invalid JSON response');
-      }
+      const data = await ApiClient.getJson('/transactions', { type: 'DEPOSIT' });
       
       const deposits = data.data || [];
 
