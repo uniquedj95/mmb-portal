@@ -25,7 +25,7 @@
         </el-table-column>
         <el-table-column prop="createdAt" label="Requested" width="180">
           <template #default="scope">
-            {{ formatDate(scope.row.createdAt) }}
+            {{ toDisplayDate(scope.row.createdAt) }}
           </template>
         </el-table-column>
         <el-table-column label="Actions" width="200">
@@ -62,6 +62,7 @@ import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { type Group } from '../../services/groups';
 import GroupService from '../../services/groups';
+import { toDisplayDate } from '../../utils/date';
 
 const router = useRouter();
 const pendingGroups = ref<Group[]>([]);
@@ -132,10 +133,6 @@ const rejectGroup = async (group: Group) => {
 const getOwnerName = (group: Group) => {
   // This would typically come from the API response
   return `User ${group.ownerId}`;
-};
-
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString();
 };
 
 onMounted(() => {

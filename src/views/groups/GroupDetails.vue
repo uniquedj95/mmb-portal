@@ -15,16 +15,16 @@
             <el-descriptions :column="2" border>
               <el-descriptions-item label="Group Name">{{ group.name }}</el-descriptions-item>
               <el-descriptions-item label="Status">
-                <el-tag :type="getStatusType(group.status)">{{ group.status }}</el-tag>
+                <el-tag :type="getStatusType(group.isActive)">{{ group.isActive ? 'ACTIVE' : 'INACTIVE' }}</el-tag>
               </el-descriptions-item>
               <el-descriptions-item label="Description" :span="2">{{ group.description }}</el-descriptions-item>
               <el-descriptions-item label="Total Members">{{ group.memberCount }}</el-descriptions-item>
-              <el-descriptions-item label="Total Savings">GHS {{ group.totalSavings?.toLocaleString() || '0' }}</el-descriptions-item>
-              <el-descriptions-item label="Total Loans">GHS {{ group.totalLoans?.toLocaleString() || '0' }}</el-descriptions-item>
+              <el-descriptions-item label="Total Savings">{{ formatCurrency(group.totalSavings ?? 0) }}</el-descriptions-item>
+              <el-descriptions-item label="Total Loans">{{ formatCurrency(group.totalLoans ?? 0) }}</el-descriptions-item>
               <el-descriptions-item label="Created">{{ formatDate(group.createdAt) }}</el-descriptions-item>
             </el-descriptions>
 
-            <div class="action-buttons" v-if="group.status === 'PENDING'">
+            <div class="action-buttons" v-if="!group.isActive">
               <el-button type="success" @click="approveGroup">Approve Group</el-button>
               <el-button type="danger" @click="rejectGroup">Reject Group</el-button>
             </div>
@@ -69,7 +69,7 @@
               </div>
               <div class="stat-item">
                 <span class="stat-label">Status</span>
-                <el-tag :type="getStatusType(group.status)">{{ group.status }}</el-tag>
+                <el-tag :type="getStatusType(group.isActive)">{{ group.isActive ? 'ACTIVE' : 'INACTIVE' }}</el-tag>
               </div>
             </div>
           </el-card>
@@ -86,6 +86,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { ArrowLeft } from '@element-plus/icons-vue';
 import type {  Group, GroupMember } from '../../services/groups';
 import GroupService from '../../services/groups';
+import { formatCurrency } from '../../utils/strs.ts';
 
 const route = useRoute();
 const router = useRouter();
@@ -95,7 +96,7 @@ const loading = ref(false);
 const groupService = new GroupService();
 
 const fetchGroupDetails = async () => {
-  const groupId = Number(route.params.id);
+  const groupId = route.params.id as string;
   if (!groupId) return;
 
   loading.value = true;
@@ -167,19 +168,8 @@ const goBack = () => {
   router.push('/groups');
 };
 
-const getStatusType = (status: string) => {
-  switch (status) {
-    case 'ACTIVE':
-      return 'success';
-    case 'PENDING':
-      return 'warning';
-    case 'INACTIVE':
-      return 'info';
-    case 'REJECTED':
-      return 'danger';
-    default:
-      return '';
-  }
+const getStatusType = (isActive: boolean) => {
+  return isActive ? 'success' : 'warning';
 };
 
 const formatDate = (date: string) => {

@@ -40,19 +40,19 @@
         <el-table-column prop="memberCount" label="Members" width="100" />
         <el-table-column prop="totalSavings" label="Total Savings" width="150">
           <template #default="scope">
-            GHS {{ scope.row.totalSavings?.toLocaleString() || '0' }}
+            {{ formatCurrency(scope.row.totalSavings ?? 0) }}
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="Status" width="120">
+        <el-table-column prop="isActive" label="Status" width="120">
           <template #default="scope">
-            <el-tag :type="getStatusType(scope.row.status)">
-              {{ scope.row.status }}
+            <el-tag :type="getStatusType(scope.row.isActive)">
+              {{ scope.row.isActive ? 'ACTIVE' : 'INACTIVE' }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="createdAt" label="Created" width="180">
           <template #default="scope">
-            {{ formatDate(scope.row.createdAt) }}
+            {{ toDisplayDate(scope.row.createdAt) }}
           </template>
         </el-table-column>
         <el-table-column label="Actions" width="200">
@@ -61,7 +61,7 @@
               View
             </el-button>
             <el-button
-              v-if="scope.row.status === 'PENDING'"
+              v-if="!scope.row.isActive"
               size="small"
               type="success"
               @click.stop="approveGroup(scope.row)"
@@ -69,7 +69,7 @@
               Approve
             </el-button>
             <el-button
-              v-if="scope.row.status === 'PENDING'"
+              v-if="!scope.row.isActive"
               size="small"
               type="danger"
               @click.stop="rejectGroup(scope.row)"
@@ -102,6 +102,8 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
 import { type Group } from '../../services/groups';
 import GroupService from '../../services/groups';
+import { toDisplayDate } from '../../utils/date';
+import { formatCurrency } from '../../utils/strs.ts';
 
 const router = useRouter();
 const groups = ref<Group[]>([]);
@@ -205,23 +207,8 @@ const rejectGroup = async (group: Group) => {
   }
 };
 
-const getStatusType = (status: string) => {
-  switch (status) {
-    case 'ACTIVE':
-      return 'success';
-    case 'PENDING':
-      return 'warning';
-    case 'INACTIVE':
-      return 'info';
-    case 'REJECTED':
-      return 'danger';
-    default:
-      return '';
-  }
-};
-
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString();
+const getStatusType = (isActive: boolean) => {
+  return isActive ? 'success' : 'warning';
 };
 
 onMounted(() => {
