@@ -1,26 +1,32 @@
 import api, { ApiRequestParam } from "../api";
 
 export interface Group {
-  id: number;
+  id: string; // API uses UUID strings, not numbers
   name: string;
   description: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'ACTIVE' | 'INACTIVE';
+  isActive: boolean; // API uses isActive instead of status
   createdAt: string;
   updatedAt: string;
-  ownerId: number;
-  memberCount: number;
-  totalSavings: number;
-  totalLoans: number;
+  ownerId: string;
+  maxMembers: number;
+  minMonthlyContribution: number;
+  maxMonthlyContribution?: number;
+  interestRate: number;
+  rolloverInterestRate: number;
+  dividendDate?: string;
+  memberCount?: number; // This might be calculated/aggregated
+  totalSavings?: number; // This might be calculated/aggregated
+  totalLoans?: number; // This might be calculated/aggregated
 }
 
 export interface GroupMember {
-  id: number;
-  groupId: number;
-  userId: number;
+  id: string;
+  groupId: string;
+  userId: string;
   joinedAt: string;
   status: 'ACTIVE' | 'INACTIVE';
   user: {
-    id: number;
+    id: string;
     firstName: string;
     lastName: string;
     email: string;
@@ -36,39 +42,42 @@ export default class GroupService {
     return groups;
   }
 
-  // Get pending groups
+  // Get pending groups (filter by isActive=false for groups that need approval)
   async getPendingGroups() {
-    const groups = await api.getJson('/groups?status=PENDING');
+    const groups = await api.getJson('/groups?isActive=false');
     return groups;
   }
 
   // Get group by ID
-  async getGroupById(id: number) {
+  async getGroupById(id: string) {
     const group = await api.getJson(`/groups/${id}`);
     return group;
   }
 
   // Get group members
-  async getGroupMembers(groupId: number) {
+  async getGroupMembers(groupId: string) {
     const members = await api.getJson(`/groups/${groupId}/members`);
     return members;
   }
 
-  // Approve group
-  async approveGroup(id: number) {
-    const response = await api.patchJson(`/groups/${id}/approve`, {});
+  // Approve group (set isActive to true)
+  async approveGroup(id: string) {
+    const response = await api.putJson(`/groups/${id}`, { isActive: true });
     return response.data;
   }
 
-  // Reject group
-  async rejectGroup(id: number, reason?: string) {
-    const response = await api.patchJson(`/groups/${id}/reject`, { reason });
+  // Reject group (set isActive to false)
+  async rejectGroup(id: string, reason?: string) {
+    const response = await api.putJson(`/groups/${id}`, { 
+      isActive: false,
+      ...(reason && { rejectionReason: reason })
+    });
     return response.data;
   }
 
-  // Update group status
-  async updateGroupStatus(id: number, status: string) {
-    const response = await api.patchJson (`/groups/${id}/status`, { status });
+  // Update group 
+  async updateGroup(id: string, updates: Partial<Group>) {
+    const response = await api.putJson(`/groups/${id}`, updates);
     return response.data;
   }
 }
