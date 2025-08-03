@@ -1,16 +1,16 @@
 <template>
   <div class="group-details" v-loading="loading">
     <div class="page-header">
-      <el-button @click="goBack" type="text" class="back-button">
+      <h1>{{ group?.name || 'Group Details' }}</h1>
+      <el-button @click="goBack" class="back-button">
         <el-icon><ArrowLeft /></el-icon>
         Back to Groups
       </el-button>
-      <h1>{{ group?.name || 'Group Details' }}</h1>
     </div>
 
     <div v-if="group" class="content">
       <el-row :gutter="20">
-        <el-col :span="16">
+        <el-col :span="24">
           <el-card title="Group Information">
             <el-descriptions :column="2" border>
               <el-descriptions-item label="Group Name">{{ group.name }}</el-descriptions-item>
@@ -18,10 +18,16 @@
                 <el-tag :type="getStatusType(group.isActive)">{{ group.isActive ? 'ACTIVE' : 'INACTIVE' }}</el-tag>
               </el-descriptions-item>
               <el-descriptions-item label="Description" :span="2">{{ group.description }}</el-descriptions-item>
-              <el-descriptions-item label="Total Members">{{ group.memberCount }}</el-descriptions-item>
+              <el-descriptions-item label="Owner">{{ group.owner?.name || 'Unknown' }}</el-descriptions-item>
+              <el-descriptions-item label="Current Members">{{ group.members?.length || 0 }} / {{ group.maxMembers }}</el-descriptions-item>
+              <el-descriptions-item label="Min Monthly Contribution">{{ formatCurrency(group.minMonthlyContribution) }}</el-descriptions-item>
+              <el-descriptions-item label="Max Monthly Contribution">{{ formatCurrency(group.maxMonthlyContribution ?? 0) }}</el-descriptions-item>
+              <el-descriptions-item label="Interest Rate">{{ toPercentage(group.interestRate, 1) }}</el-descriptions-item>
+              <el-descriptions-item label="Rollover Interest Rate">{{ toPercentage(group.rolloverInterestRate, 1) }}</el-descriptions-item>
               <el-descriptions-item label="Total Savings">{{ formatCurrency(group.totalSavings ?? 0) }}</el-descriptions-item>
-              <el-descriptions-item label="Total Loans">{{ formatCurrency(group.totalLoans ?? 0) }}</el-descriptions-item>
               <el-descriptions-item label="Created">{{ formatDate(group.createdAt) }}</el-descriptions-item>
+              <el-descriptions-item label="Total Contributions">{{ formatCurrency(getTotalContributions()) }}</el-descriptions-item>
+              <el-descriptions-item label="Total Loans">{{ group.loans?.length || 0  }}</el-descriptions-item>
             </el-descriptions>
 
             <div class="action-buttons" v-if="!group.isActive">
@@ -29,49 +35,28 @@
               <el-button type="danger" @click="rejectGroup">Reject Group</el-button>
             </div>
           </el-card>
-
-          <el-card title="Group Members" style="margin-top: 20px;">
-            <el-table :data="members" style="width: 100%">
-              <el-table-column prop="user.firstName" label="First Name" />
-              <el-table-column prop="user.lastName" label="Last Name" />
+        </el-col>
+      </el-row>
+      <el-row :gutter="20" style="margin-top: 20px;">
+        <el-col :span="24"> 
+          <el-card>
+            <el-card-title style="margin: 30px 7px;">Group Members</el-card-title>
+            <el-table :data="group.members" style="width: 100%">
+              <el-table-column prop="user.name" label="Name" />
+              <el-table-column prop="user.phoneNumber" label="Phone" />
               <el-table-column prop="user.email" label="Email" />
-              <el-table-column prop="user.phone" label="Phone" />
+              <el-table-column prop="totalContributions" label="Total Contributions" width="150">
+                <template #default="scope">
+                  {{ formatCurrency(scope.row.totalContributions) }}
+                </template>
+              </el-table-column>
               <el-table-column prop="joinedAt" label="Joined" width="150">
                 <template #default="scope">
                   {{ formatDate(scope.row.joinedAt) }}
                 </template>
               </el-table-column>
-              <el-table-column prop="status" label="Status" width="100">
-                <template #default="scope">
-                  <el-tag :type="scope.row.status === 'ACTIVE' ? 'success' : 'warning'">
-                    {{ scope.row.status }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-card>
-        </el-col>
 
-        <el-col :span="8">
-          <el-card title="Quick Stats">
-            <div class="quick-stats">
-              <div class="stat-item">
-                <span class="stat-label">Members</span>
-                <span class="stat-value">{{ group.memberCount }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Total Savings</span>
-                <span class="stat-value">GHS {{ group.totalSavings?.toLocaleString() || '0' }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Total Loans</span>
-                <span class="stat-value">GHS {{ group.totalLoans?.toLocaleString() || '0' }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Status</span>
-                <el-tag :type="getStatusType(group.isActive)">{{ group.isActive ? 'ACTIVE' : 'INACTIVE' }}</el-tag>
-              </div>
-            </div>
+            </el-table>
           </el-card>
         </el-col>
       </el-row>
@@ -84,14 +69,13 @@ import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { ArrowLeft } from '@element-plus/icons-vue';
-import type {  Group, GroupMember } from '../../services/groups';
+import type { Group } from '../../services/groups';
 import GroupService from '../../services/groups';
-import { formatCurrency } from '../../utils/strs.ts';
+import { formatCurrency, toPercentage } from '../../utils/strs.ts';
 
 const route = useRoute();
 const router = useRouter();
 const group = ref<Group | null>(null);
-const members = ref<GroupMember[]>([]);
 const loading = ref(false);
 const groupService = new GroupService();
 
@@ -101,13 +85,8 @@ const fetchGroupDetails = async () => {
 
   loading.value = true;
   try {
-    const [groupData, membersData] = await Promise.all([
-      groupService.getGroupById(groupId),
-      groupService.getGroupMembers(groupId)
-    ]);
-    
-    group.value = groupData.data;
-    members.value = membersData.data;
+    group.value = await groupService.getGroupById(groupId);
+    // Members are included in the group response
   } catch (error) {
     ElMessage.error('Failed to fetch group details');
   } finally {
@@ -172,6 +151,11 @@ const getStatusType = (isActive: boolean) => {
   return isActive ? 'success' : 'warning';
 };
 
+const getTotalContributions = () => {
+  if (!group.value?.members) return 0;
+  return group.value.members.reduce((total, member) => total + (member.totalContributions || 0), 0);
+};
+
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString();
 };
@@ -192,6 +176,7 @@ onMounted(() => {
 
 .back-button {
   margin-bottom: 10px;
+  float: right;
 }
 
 .action-buttons {

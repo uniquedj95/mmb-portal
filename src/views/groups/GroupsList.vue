@@ -37,7 +37,11 @@
       >
         <el-table-column prop="name" label="Group Name" sortable />
         <el-table-column prop="description" label="Description" />
-        <el-table-column prop="memberCount" label="Members" width="100" />
+        <el-table-column prop="memberCount" label="Members" width="100">
+          <template #default="scope">
+            {{ scope.row.members?.length || scope.row.memberCount || 0 }} / {{ scope.row.maxMembers || '?' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="totalSavings" label="Total Savings" width="150">
           <template #default="scope">
             {{ formatCurrency(scope.row.totalSavings ?? 0) }}

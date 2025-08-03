@@ -17,20 +17,51 @@ export interface Group {
   memberCount?: number; // This might be calculated/aggregated
   totalSavings?: number; // This might be calculated/aggregated
   totalLoans?: number; // This might be calculated/aggregated
+  // Additional properties from API response
+  owner?: {
+    id: string;
+    name: string;
+    idType: string;
+    idNumber: string;
+    phoneNumber: string;
+    email?: string;
+    roleId: string;
+    verified: boolean;
+    createdAt: string;
+    updatedAt: string;
+  };
+  members?: GroupMember[];
+  wallets?: Array<{
+    id: string;
+    groupId: string;
+    type: string;
+    balance: number;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+  loans?: Array<any>; // Define loan interface if needed
 }
 
 export interface GroupMember {
   id: string;
-  groupId: string;
   userId: string;
+  groupId: string;
   joinedAt: string;
-  status: 'ACTIVE' | 'INACTIVE';
+  leftAt?: string;
+  leftReason?: string;
+  totalContributions: number;
+  status: 'APPROVED' | 'PENDING' | 'REJECTED'; // Based on API response
   user: {
     id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
+    name: string; // API uses single 'name' field, not firstName/lastName
+    idType: string;
+    idNumber: string;
+    phoneNumber: string;
+    email?: string;
+    roleId: string;
+    verified: boolean;
+    createdAt: string;
+    updatedAt: string;
   };
 }
 
