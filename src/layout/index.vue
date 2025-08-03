@@ -13,7 +13,7 @@
 <script lang="ts" setup>
 import LeftSidebar from './components/sidebar/LeftSidebar.vue';
 import TopNav from './components/topnav/index.vue';
-import { ElContainer, ElMain, ElScrollbar } from 'element-plus';
+import { ElContainer, ElMain } from 'element-plus';
 import { useSidebar } from '../composables/useSidebar';
 
 const { collapsed } = useSidebar();

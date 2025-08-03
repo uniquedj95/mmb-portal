@@ -4,6 +4,7 @@ import AvatarMenuItem from "./AvatarMenuItem.vue";
 import SidebarToggler from "./SidebarToggler.vue";
 import FullScreenToggler from "./FullScreenToggler.vue";
 import SearchButton from "./SearchButton.vue";
+import NotificationDropdown from "./NotificationDropdown.vue";
 </script>
 
 <template>
@@ -20,6 +21,7 @@ import SearchButton from "./SearchButton.vue";
       </el-menu-item>
       <div class="flex-grow"></div>
       <search-button />
+      <notification-dropdown />
       <full-screen-toggler />
       <el-divider direction="vertical" style="font-size: 58px; margin: 0;"/>
       <avatar-menu-item />

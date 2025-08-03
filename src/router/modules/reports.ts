@@ -1,6 +1,6 @@
 import { RouteRecordRaw } from 'vue-router';
 import Layout from '../../layout/index.vue';
-import { Document, Bell } from '@element-plus/icons-vue';
+import { Document } from '@element-plus/icons-vue';
 
 const ReportsRoutes: RouteRecordRaw = {
   path: '/reports',
@@ -31,25 +31,4 @@ const ReportsRoutes: RouteRecordRaw = {
   ]
 };
 
-const NotificationsRoutes: RouteRecordRaw = {
-  path: '/notifications',
-  component: Layout,
-  redirect: '/notifications/list',
-  meta: {
-    title: 'Notifications',
-    icon: Bell,
-  },
-  children: [
-    {
-      path: 'list',
-      component: () => import('../../views/notifications/NotificationsList.vue'),
-      name: 'NotificationsList',
-      meta: {
-        title: 'All Notifications',
-        roles: ['admin'],
-      }
-    }
-  ]
-};
-
-export { ReportsRoutes, NotificationsRoutes };
+export default ReportsRoutes;

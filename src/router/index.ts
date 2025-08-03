@@ -5,8 +5,7 @@ import { Odometer } from '@element-plus/icons-vue';
 import AccessRoutes from "./modules/auth";
 import GroupsRoutes from "./modules/groups";
 import TransactionsRoutes from "./modules/transactions";
-import UsersRoutes from "./modules/users";
-import { ReportsRoutes, NotificationsRoutes } from "./modules/reports";
+import ReportsRoutes from "./modules/reports";
 
 /*
   Note: sub-menu only appear when children.length>=1
@@ -36,6 +35,15 @@ export const routes: Array<RouteRecordRaw> = [
           title: 'Dashboard',
           icon: Odometer,
         }
+      },
+      {
+        path: 'notifications/all',
+        component: () => import('../views/notifications/NotificationsList.vue'),
+        name: 'AllNotifications',
+        meta: {
+          title: 'All Notifications',
+          hidden: true
+        }
       }
     ]
   },
@@ -46,9 +54,7 @@ export const routes: Array<RouteRecordRaw> = [
   },
   GroupsRoutes,
   TransactionsRoutes,
-  UsersRoutes,
   ReportsRoutes,
-  NotificationsRoutes,
   AccessRoutes,
 ]
 
