@@ -26,12 +26,6 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Check if running as root
-if [[ $EUID -eq 0 ]]; then
-    print_error "This script should not be run as root. Please run as a regular user with sudo privileges."
-    exit 1
-fi
-
 # Check if Node.js is already installed (should be from API setup)
 if ! command -v node &> /dev/null; then
     print_error "Node.js is not installed. Please run the API setup script first."
