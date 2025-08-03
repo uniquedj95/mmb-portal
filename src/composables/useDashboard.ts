@@ -31,7 +31,7 @@ export function useDashboard() {
       id: 'total-users',
       title: 'Total Users',
       value: 0,
-      icon: 'users',
+      icon: 'User',
       color: '#409EFF',
       change: '+12%',
       changeType: 'increase',
@@ -41,7 +41,7 @@ export function useDashboard() {
       id: 'total-groups',
       title: 'Total Groups',
       value: 0,
-      icon: 'user-group',
+      icon: 'UserFilled',
       color: '#67C23A',
       change: '+8%',
       changeType: 'increase',
@@ -51,7 +51,7 @@ export function useDashboard() {
       id: 'pending-approvals',
       title: 'Pending Approvals',
       value: 0,
-      icon: 'clock',
+      icon: 'Clock',
       color: '#E6A23C',
       change: '+3',
       changeType: 'increase',
@@ -61,7 +61,7 @@ export function useDashboard() {
       id: 'total-savings',
       title: 'Total Savings',
       value: 0,
-      icon: 'money',
+      icon: 'Money',
       color: '#F56C6C',
       change: '+15%',
       changeType: 'increase',
@@ -77,7 +77,19 @@ export function useDashboard() {
       // Simulate API call - replace with actual API endpoint
       const response = await fetch('/api/dashboard/stats');
       if (response.ok) {
-        const data: DashboardStats = await response.json();
+        const text = await response.text();
+        if (!text) {
+          throw new Error('Empty response');
+        }
+        
+        // Check if response is JSON
+        let data: DashboardStats;
+        try {
+          data = JSON.parse(text);
+        } catch (parseError) {
+          console.error('Invalid JSON response:', text);
+          throw new Error('Invalid JSON response');
+        }
         
         // Update statistics with real data
         statistics.value = statistics.value.map(stat => ({
@@ -92,7 +104,7 @@ export function useDashboard() {
         }));
       } else {
         // Fallback to demo data
-        throw new Error('Failed to fetch data');
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);

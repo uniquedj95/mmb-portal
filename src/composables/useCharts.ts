@@ -28,29 +28,44 @@ export const useCharts = () => {
 
   const updateLoanChart = async () => {
     try {
-      // Fetch active loans
-      const activeResponse = await fetch('/api/loans?status=ACTIVE');
-      const activeData = await activeResponse.json();
-      const activeLoans = activeData.data;
+      // Fetch all loans
+      const response = await fetch('/api/loans');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const text = await response.text();
+      if (!text) {
+        throw new Error('Empty response');
+      }
+      
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (parseError) {
+        console.error('Invalid JSON response for loans:', text);
+        throw new Error('Invalid JSON response');
+      }
+      
+      const loans = data.data || [];
+      
+      // Separate pending and completed loans
+      const pendingLoans = loans.filter((loan: any) => loan.status === 'PENDING');
+      const completedLoans = loans.filter((loan: any) => loan.status === 'COMPLETED');
 
-      // Fetch overdue loans
-      const overdueResponse = await fetch('/api/loans?status=ACTIVE&repaymentDate[lt]=now()');
-      const overdueData = await overdueResponse.json();
-      const overdueLoans = overdueData.data;
-
-      // Fetch completed loans
-      const completedResponse = await fetch('/api/loans?status=COMPLETED');
-      const completedData = await completedResponse.json();
-      const completedLoans = completedData.data;
-
-      // Group loans by month
-      const months = Array.from(new Set([
-        ...activeLoans.map((loan: any) => new Date(loan.createdAt).toLocaleString('default', { month: 'short' })),
-        ...overdueLoans.map((loan: any) => new Date(loan.createdAt).toLocaleString('default', { month: 'short' })),
-        ...completedLoans.map((loan: any) => new Date(loan.createdAt).toLocaleString('default', { month: 'short' }))
-      ])).sort();
+      // Get the last 6 months
+      const months = Array.from({length: 6}, (_, i) => {
+        const date = new Date();
+        date.setMonth(date.getMonth() - i);
+        return date.toLocaleString('default', { month: 'short' });
+      }).reverse();
 
       const option = {
+        title: {
+          text: 'Loan Statistics',
+          left: 'center'
+        },
         tooltip: {
           trigger: 'axis',
           axisPointer: {
@@ -58,12 +73,13 @@ export const useCharts = () => {
           }
         },
         legend: {
-          data: ['Active Loans', 'Overdue Loans', 'Completed Loans']
+          data: ['Pending Loans', 'Completed Loans'],
+          bottom: '5%'
         },
         grid: {
           left: '3%',
           right: '4%',
-          bottom: '3%',
+          bottom: '15%',
           containLabel: true
         },
         xAxis: {
@@ -71,26 +87,15 @@ export const useCharts = () => {
           data: months
         },
         yAxis: {
-          type: 'value',
-          name: 'Amount'
+          type: 'value'
         },
         series: [
           {
-            name: 'Active Loans',
+            name: 'Pending Loans',
             type: 'bar',
             stack: 'total',
             data: months.map(month => 
-              activeLoans.filter((loan: any) => 
-                new Date(loan.createdAt).toLocaleString('default', { month: 'short' }) === month
-              ).reduce((sum: number, loan: any) => sum + loan.amount, 0)
-            )
-          },
-          {
-            name: 'Overdue Loans',
-            type: 'bar',
-            stack: 'total',
-            data: months.map(month => 
-              overdueLoans.filter((loan: any) => 
+              pendingLoans.filter((loan: any) => 
                 new Date(loan.createdAt).toLocaleString('default', { month: 'short' }) === month
               ).reduce((sum: number, loan: any) => sum + loan.amount, 0)
             )
@@ -111,6 +116,51 @@ export const useCharts = () => {
       loanChart?.setOption(option);
     } catch (error) {
       console.error('Failed to update loan chart:', error);
+      // Set fallback data
+      const fallbackOption = {
+        title: {
+          text: 'Loan Statistics (Demo Data)',
+          left: 'center'
+        },
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: {
+            type: 'shadow'
+          }
+        },
+        legend: {
+          data: ['Pending Loans', 'Completed Loans'],
+          bottom: '5%'
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '15%',
+          containLabel: true
+        },
+        xAxis: {
+          type: 'category',
+          data: ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug']
+        },
+        yAxis: {
+          type: 'value'
+        },
+        series: [
+          {
+            name: 'Pending Loans',
+            type: 'bar',
+            stack: 'total',
+            data: [12000, 15000, 18000, 14000, 16000, 13000]
+          },
+          {
+            name: 'Completed Loans',
+            type: 'bar',
+            stack: 'total',
+            data: [45000, 52000, 48000, 61000, 55000, 58000]
+          }
+        ]
+      };
+      loanChart?.setOption(fallbackOption);
     }
   };
 
@@ -118,8 +168,25 @@ export const useCharts = () => {
     try {
       // Fetch all deposits
       const response = await fetch('/api/transactions?type=DEPOSIT');
-      const data = await response.json();
-      const deposits = data.data;
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const text = await response.text();
+      if (!text) {
+        throw new Error('Empty response');
+      }
+      
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (parseError) {
+        console.error('Invalid JSON response for savings:', text);
+        throw new Error('Invalid JSON response');
+      }
+      
+      const deposits = data.data || [];
 
       // Group deposits by month
       const months = Array.from(new Set(
@@ -142,16 +209,21 @@ export const useCharts = () => {
       });
 
       const option = {
+        title: {
+          text: 'Savings Trends',
+          left: 'center'
+        },
         tooltip: {
           trigger: 'axis'
         },
         legend: {
-          data: ['Total Savings', 'New Deposits']
+          data: ['Total Savings', 'New Deposits'],
+          bottom: '5%'
         },
         grid: {
           left: '3%',
           right: '4%',
-          bottom: '3%',
+          bottom: '15%',
           containLabel: true
         },
         xAxis: {
@@ -182,6 +254,50 @@ export const useCharts = () => {
       savingsChart?.setOption(option);
     } catch (error) {
       console.error('Failed to update savings chart:', error);
+      // Set fallback data
+      const fallbackOption = {
+        title: {
+          text: 'Savings Trends (Demo Data)',
+          left: 'center'
+        },
+        tooltip: {
+          trigger: 'axis'
+        },
+        legend: {
+          data: ['Total Savings', 'New Deposits'],
+          bottom: '5%'
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '15%',
+          containLabel: true
+        },
+        xAxis: {
+          type: 'category',
+          boundaryGap: false,
+          data: ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug']
+        },
+        yAxis: {
+          type: 'value',
+          name: 'Amount'
+        },
+        series: [
+          {
+            name: 'Total Savings',
+            type: 'line',
+            data: [85000, 92000, 98000, 105000, 112000, 125000],
+            smooth: true
+          },
+          {
+            name: 'New Deposits',
+            type: 'line',
+            data: [45000, 52000, 48000, 61000, 55000, 67000],
+            smooth: true
+          }
+        ]
+      };
+      savingsChart?.setOption(fallbackOption);
     }
   };
 
