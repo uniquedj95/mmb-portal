@@ -25,6 +25,7 @@
           <el-option label="Approved" value="APPROVED" />
           <el-option label="Rejected" value="REJECTED" />
           <el-option label="Completed" value="COMPLETED" />
+          <el-option label="Failed" value="FAILED" />
         </el-select>
         <el-select
           v-model="typeFilter"
@@ -35,10 +36,14 @@
           <el-option label="All" value="" />
           <el-option label="Deposit" value="DEPOSIT" />
           <el-option label="Withdrawal" value="WITHDRAWAL" />
-          <el-option label="Interest" value="INTEREST" />
           <el-option label="Loan Disbursement" value="LOAN_DISBURSEMENT" />
           <el-option label="Loan Repayment" value="LOAN_REPAYMENT" />
-          <el-option label="Share Contribution" value="SHARE_CONTRIBUTION" />
+          <el-option label="Group Contribution" value="GROUP_CONTRIBUTION" />
+          <el-option label="Dividend" value="DIVIDEND" />
+          <el-option label="Donation" value="DONATION" />
+          <el-option label="Admin Fee" value="ADMIN_FEE" />
+          <el-option label="Social Fund Contribution" value="SOCIAL_FUND_CONTRIBUTION" />
+          <el-option label="Social Fund Disbursement" value="SOCIAL_FUND_DISBURSEMENT" />
         </el-select>
       </div>
     </div>
@@ -49,7 +54,7 @@
         style="width: 100%"
         v-loading="loading"
       >
-        <el-table-column prop="transactionId" label="Transaction ID" width="180" />
+        <el-table-column prop="id" label="Transaction ID" width="180" />
         <el-table-column prop="type" label="Type" width="150">
           <template #default="scope">
             <el-tag :type="getTransactionTypeColor(scope.row.type)">
@@ -59,17 +64,17 @@
         </el-table-column>
         <el-table-column prop="amount" label="Amount" width="150">
           <template #default="scope">
-            GHS {{ scope.row.amount?.toLocaleString() }}
+            {{ formatCurrency(scope.row.amount ?? 0) }}
           </template>
         </el-table-column>
-        <el-table-column prop="account.user.firstName" label="User" width="180">
+        <el-table-column prop="user.name" label="User" width="180">
           <template #default="scope">
-            {{ scope.row.account?.user?.firstName }} {{ scope.row.account?.user?.lastName }}
+            {{ scope.row.user?.name }}
           </template>
         </el-table-column>
-        <el-table-column prop="account.group.name" label="Group" width="180">
+        <el-table-column prop="group.name" label="Group" width="180">
           <template #default="scope">
-            {{ scope.row.account?.group?.name }}
+            {{ scope.row.group?.name || 'N/A' }}
           </template>
         </el-table-column>
         <el-table-column prop="status" label="Status" width="120">
@@ -81,7 +86,7 @@
         </el-table-column>
         <el-table-column prop="createdAt" label="Date" width="180">
           <template #default="scope">
-            {{ formatDate(scope.row.createdAt) }}
+            {{ toDisplayDate(scope.row.createdAt) }}
           </template>
         </el-table-column>
         <el-table-column label="Actions" fixed="right" width="200">
@@ -133,7 +138,9 @@
 import { ref, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
-import { transactionsApi, type Transaction } from '../../api/transactions';
+import TransactionService, { type Transaction } from '../../services/transactions';
+import { toDisplayDate } from '../../utils/date';
+import { formatCurrency } from '../../utils/strs';
 
 const transactions = ref<Transaction[]>([]);
 const loading = ref(false);
@@ -144,19 +151,24 @@ const searchQuery = ref('');
 const statusFilter = ref('');
 const typeFilter = ref('');
 
+const transactionService = new TransactionService();
+
 const fetchTransactions = async () => {
   loading.value = true;
   try {
-    const data = await transactionsApi.getTransactions({
+    const response = await transactionService.getTransactions({
       page: currentPage.value,
       limit: pageSize.value,
       status: statusFilter.value,
       type: typeFilter.value,
       search: searchQuery.value
     });
-    transactions.value = data.data;
-    total.value = data.meta.totalItems;
+    transactions.value = response.data;
+    total.value = response.meta.totalItems;
+    currentPage.value = response.meta.currentPage;
+    pageSize.value = response.meta.pageSize;
   } catch (error) {
+    console.error('Error fetching transactions:', error);
     ElMessage.error('Failed to fetch transactions');
   } finally {
     loading.value = false;
@@ -195,11 +207,12 @@ const approveTransaction = async (transaction: Transaction) => {
       }
     );
     
-    await transactionsApi.approveTransaction(transaction.id);
+    await transactionService.approveTransaction(transaction.id);
     ElMessage.success('Transaction approved successfully');
     fetchTransactions();
   } catch (error: any) {
     if (error !== 'cancel') {
+      console.error('Error approving transaction:', error);
       ElMessage.error('Failed to approve transaction');
     }
   }
@@ -218,11 +231,12 @@ const rejectTransaction = async (transaction: Transaction) => {
       }
     );
     
-    await transactionsApi.rejectTransaction(transaction.id, reason);
+    await transactionService.rejectTransaction(transaction.id, reason);
     ElMessage.success('Transaction rejected successfully');
     fetchTransactions();
   } catch (error: any) {
     if (error !== 'cancel') {
+      console.error('Error rejecting transaction:', error);
       ElMessage.error('Failed to reject transaction');
     }
   }
@@ -232,12 +246,14 @@ const viewTransactionDetails = (transaction: Transaction) => {
   // This would typically navigate to a transaction details view
   ElMessageBox.alert(
     `
-    <p><strong>Transaction ID:</strong> ${transaction.transactionId}</p>
+    <p><strong>Transaction ID:</strong> ${transaction.id}</p>
     <p><strong>Type:</strong> ${formatTransactionType(transaction.type)}</p>
-    <p><strong>Amount:</strong> GHS ${transaction.amount}</p>
+    <p><strong>Amount:</strong> ${formatCurrency(transaction.amount)}</p>
     <p><strong>Status:</strong> ${transaction.status}</p>
-    <p><strong>Date:</strong> ${formatDate(transaction.createdAt)}</p>
-    <p><strong>Description:</strong> ${transaction.description || 'No description'}</p>
+    <p><strong>Date:</strong> ${toDisplayDate(transaction.createdAt)}</p>
+    <p><strong>Reference:</strong> ${transaction.reference || 'No reference'}</p>
+    <p><strong>User:</strong> ${transaction.user?.name}</p>
+    <p><strong>Group:</strong> ${transaction.group?.name || 'N/A'}</p>
     `,
     'Transaction Details',
     {
@@ -283,10 +299,6 @@ const getStatusColor = (status: string) => {
 
 const formatTransactionType = (type: string) => {
   return type?.replace(/_/g, ' ');
-};
-
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleString();
 };
 
 onMounted(() => {
