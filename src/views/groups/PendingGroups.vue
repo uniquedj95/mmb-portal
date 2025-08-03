@@ -2,12 +2,6 @@
   <div class="pending-groups">
     <div class="page-header">
       <h1>Pending Group Approvals</h1>
-      <el-alert
-        title="Groups requiring your approval"
-        type="info"
-        show-icon
-        :closable="false"
-      />
     </div>
 
     <el-card>
