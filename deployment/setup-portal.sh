@@ -26,6 +26,19 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Check if running as root and adjust accordingly
+if [[ $EUID -eq 0 ]]; then
+    print_warning "Running as root user. This is acceptable for VPS setups."
+    SUDO_CMD=""
+    WEB_USER="www-data"
+    USER_HOME="/root"
+else
+    print_status "Running as regular user with sudo privileges."
+    SUDO_CMD="sudo"
+    WEB_USER="www-data"
+    USER_HOME="$HOME"
+fi
+
 # Check if Node.js is already installed (should be from API setup)
 if ! command -v node &> /dev/null; then
     print_error "Node.js is not installed. Please run the API setup script first."
@@ -38,13 +51,19 @@ print_status "NPM version: $(npm --version)"
 # Create portal directory
 PORTAL_DIR="/var/www/mmb-portal"
 print_status "Creating portal directory: $PORTAL_DIR"
-sudo mkdir -p $PORTAL_DIR
-sudo chown $USER:$USER $PORTAL_DIR
+$SUDO_CMD mkdir -p $PORTAL_DIR
+
+# Set ownership appropriately
+if [[ $EUID -eq 0 ]]; then
+    chown root:root $PORTAL_DIR
+else
+    $SUDO_CMD chown $USER:$USER $PORTAL_DIR
+fi
 
 # Install build dependencies if not already present
 print_status "Installing build dependencies..."
-sudo apt-get update
-sudo apt-get install -y git
+$SUDO_CMD apt-get update
+$SUDO_CMD apt-get install -y git
 
 # Clone or update portal repository
 if [ -d "$PORTAL_DIR/.git" ]; then
@@ -70,10 +89,10 @@ npm run build
 print_status "Creating nginx configuration for portal..."
 
 # Backup existing nginx config
-sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.backup.$(date +%Y%m%d-%H%M%S)
+$SUDO_CMD cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.backup.$(date +%Y%m%d-%H%M%S)
 
 # Create new nginx config that includes both API and Portal
-sudo tee /etc/nginx/sites-available/default > /dev/null << 'EOF'
+$SUDO_CMD tee /etc/nginx/sites-available/default > /dev/null << 'EOF'
 # Rate limiting configuration
 limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
 limit_req_zone $binary_remote_addr zone=portal:10m rate=30r/s;
@@ -189,11 +208,11 @@ EOF
 
 # Test nginx configuration
 print_status "Testing nginx configuration..."
-sudo nginx -t
+$SUDO_CMD nginx -t
 
 if [ $? -eq 0 ]; then
     print_status "Nginx configuration is valid. Reloading nginx..."
-    sudo systemctl reload nginx
+    $SUDO_CMD systemctl reload nginx
 else
     print_error "Nginx configuration test failed. Please check the configuration."
     exit 1
@@ -201,21 +220,30 @@ fi
 
 # Set proper permissions
 print_status "Setting proper permissions..."
-sudo chown -R www-data:www-data /var/www/mmb-portal/dist
-sudo chmod -R 755 /var/www/mmb-portal/dist
+$SUDO_CMD chown -R $WEB_USER:$WEB_USER /var/www/mmb-portal/dist
+$SUDO_CMD chmod -R 755 /var/www/mmb-portal/dist
 
 # Create deployment script for future updates
 print_status "Creating deployment script..."
-sudo tee /usr/local/bin/deploy-portal.sh > /dev/null << 'EOF'
+$SUDO_CMD tee /usr/local/bin/deploy-portal.sh > /dev/null << 'EOF'
 #!/bin/bash
 set -e
 
 echo "🚀 Deploying MIZU Portal..."
 
+# Check if running as root and adjust accordingly
+if [[ $EUID -eq 0 ]]; then
+    SUDO_CMD=""
+    WEB_USER="www-data"
+else
+    SUDO_CMD="sudo"
+    WEB_USER="www-data"
+fi
+
 cd /var/www/mmb-portal
 
 # Pull latest changes
-git pull origin master
+git pull origin main
 
 # Install dependencies
 npm install
@@ -224,13 +252,13 @@ npm install
 npm run build
 
 # Set permissions
-sudo chown -R www-data:www-data /var/www/mmb-portal/dist
-sudo chmod -R 755 /var/www/mmb-portal/dist
+$SUDO_CMD chown -R $WEB_USER:$WEB_USER /var/www/mmb-portal/dist
+$SUDO_CMD chmod -R 755 /var/www/mmb-portal/dist
 
 echo "✅ Portal deployment completed!"
 EOF
 
-sudo chmod +x /usr/local/bin/deploy-portal.sh
+$SUDO_CMD chmod +x /usr/local/bin/deploy-portal.sh
 
 print_status "✅ MIZU Portal setup completed!"
 print_status ""

@@ -1,7 +1,25 @@
 #!/bin/bash
 
-# MIZU Portal - Quick Deployment Script
-# Run this script to deploy portal updates
+# MIZU Portal - Quick Deployment S# Pull latest changes
+print_status "Pulling latest changes from repository..."
+git pull origin main
+
+# Install/update dependencies
+print_status "Installing/updating dependencies..."
+npm install
+
+# Build for production
+print_status "Building portal for production..."
+npm run build
+
+# Set proper permissions
+print_status "Setting proper permissions..."
+$SUDO_CMD chown -R $WEB_USER:$WEB_USER $PORTAL_DIR/dist
+$SUDO_CMD chmod -R 755 $PORTAL_DIR/dist
+
+# Test nginx configuration
+print_status "Testing nginx configuration..."
+$SUDO_CMD nginx -tipt to deploy portal updates
 
 set -e
 
@@ -22,6 +40,15 @@ print_warning() {
 print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
+
+# Check if running as root and adjust accordingly
+if [[ $EUID -eq 0 ]]; then
+    SUDO_CMD=""
+    WEB_USER="www-data"
+else
+    SUDO_CMD="sudo"
+    WEB_USER="www-data"
+fi
 
 PORTAL_DIR="/var/www/mmb-portal"
 
