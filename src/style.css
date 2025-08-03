@@ -36,6 +36,38 @@ a:hover {
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
+  margin: 0 0 1rem 0;
+}
+
+section h1,
+.page-header h1,
+.page-content h1,
+div h1 {
+  font-size: 2rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  color: inherit;
+}
+
+h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+  color: inherit;
+}
+
+h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: inherit;
+}
+
+h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: inherit;
 }
 
 .justify-between {
@@ -106,6 +138,27 @@ button:focus-visible {
   padding-right: 1rem;
 }
 
+/* Page header styles for better layout and accessibility */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.page-header h1 {
+  margin: 0;
+  flex: 1;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .modal-lg {
   max-width: 90% !important;
 }
@@ -124,5 +177,25 @@ button:focus-visible {
   }
   button {
     background-color: #f9f9f9;
+  }
+  
+  /* Light mode heading colors */
+  h1, h2, h3, h4 {
+    color: #213547;
+  }
+  
+  .page-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  /* Dark mode heading colors */
+  h1, h2, h3, h4 {
+    color: rgba(255, 255, 255, 0.87);
+  }
+  
+  .page-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
 }
