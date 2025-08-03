@@ -5,6 +5,8 @@
       style="width: 100%"
       v-loading="loading"
       :default-sort="{ prop: 'createdAt', order: 'descending' }"
+      :table-layout="'auto'"
+      :fit="true"
     >
       <el-table-column
         v-for="col in columns"
@@ -51,6 +53,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
+import TransactionService from '../services/transactions';
 
 const props = defineProps({
   columns: {
@@ -69,14 +72,16 @@ const currentPage = ref(1);
 const pageSize = ref(props.itemsPerPage);
 const total = ref(0);
 
+const transactionService = new TransactionService();
+
 const fetchTransactions = async () => {
   loading.value = true;
   try {
-    const response = await fetch(`/api/transactions?status=PENDING&page=${currentPage.value}&limit=${pageSize.value}`);
-    const data = await response.json();
-    transactions.value = data.data;
-    total.value = data.meta.totalItems;
+    const response = await transactionService.getPendingTransactions();
+    transactions.value = response.data || response;
+    total.value = response.total || response.length;
   } catch (error) {
+    console.error('Error fetching transactions:', error);
     ElMessage.error('Failed to fetch transactions');
   } finally {
     loading.value = false;
@@ -85,30 +90,22 @@ const fetchTransactions = async () => {
 
 const approveTransaction = async (transaction) => {
   try {
-    await fetch(`/api/transactions/${transaction.id}/approve`, {
-      method: 'PUT'
-    });
+    await transactionService.approveTransaction(transaction.id);
     ElMessage.success('Transaction approved successfully');
     fetchTransactions();
   } catch (error) {
+    console.error('Error approving transaction:', error);
     ElMessage.error('Failed to approve transaction');
   }
 };
 
 const rejectTransaction = async (transaction) => {
   try {
-    await fetch(`/api/transactions/${transaction.id}/reject`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        reason: 'Rejected by admin'
-      })
-    });
+    await transactionService.rejectTransaction(transaction.id, 'Rejected by admin');
     ElMessage.success('Transaction rejected successfully');
     fetchTransactions();
   } catch (error) {
+    console.error('Error rejecting transaction:', error);
     ElMessage.error('Failed to reject transaction');
   }
 };
@@ -131,6 +128,12 @@ onMounted(() => {
 <style scoped>
 .transactions-table {
   width: 100%;
+  overflow-x: auto;
+}
+
+.transactions-table .el-table {
+  width: 100%;
+  min-width: 100%;
 }
 
 .pagination-container {

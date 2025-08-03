@@ -66,36 +66,30 @@ const columns = [
     prop: 'transaction_id',
     label: 'Transaction ID',
     sortable: true,
-    width: '180',
   },
   {
     prop: 'type',
     label: 'Type',
     sortable: true,
-    width: '120',
   },
   {
     prop: 'amount',
     label: 'Amount',
     sortable: true,
-    width: '120',
   },
   {
     prop: 'status',
     label: 'Status',
     sortable: true,
-    width: '120',
   },
   {
     prop: 'created_at',
     label: 'Date',
     sortable: true,
-    width: '160',
   },
   {
     prop: 'actions',
     label: 'Actions',
-    width: '120',
   }
 ];
 
