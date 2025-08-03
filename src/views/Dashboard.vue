@@ -44,14 +44,14 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted, onBeforeUnmount } from "vue";
 import StatisticsCard from "../components/StatisticsCard.vue";
 import TransactionsTable from "../components/TransactionsTable.vue";
 import { useDashboard } from "../composables/useDashboard";
 import { useCharts } from "../composables/useCharts";
 
-const { statistics, isLoading, fetchDashboardData } = useDashboard();
+const { statistics, fetchDashboardData } = useDashboard();
 const {
   loanChartRef,
   savingsChartRef,
