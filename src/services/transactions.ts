@@ -89,13 +89,13 @@ export default class TransactionService {
 
   // Approve transaction
   async approveTransaction(id: string) {
-    const response = await api.patchJson(`/transactions/${id}/approve`, {});
+    const response = await api.putJson(`/transactions/${id}/approve`, {});
     return response;
   }
 
   // Reject transaction
   async rejectTransaction(id: string, reason?: string) {
-    const response = await api.patchJson(`/transactions/${id}/reject`, { reason });
+    const response = await api.putJson(`/transactions/${id}/reject`, { reason });
     return response;
   }
 
