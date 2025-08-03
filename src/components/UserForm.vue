@@ -3,8 +3,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
-import { FormFields, Option, onFinishHandler } from "../interfaces/standard_form";
+import { computed } from "vue";
+import { FormFields, onFinishHandler } from "../interfaces/standard_form";
 import {
   User as UserIcon,
   Lock as LockIcon,
@@ -12,11 +12,9 @@ import {
   Position as RoleIcon,
 } from '@element-plus/icons-vue'
 import StandardForm from "./StandardForm.vue";
-import apiClient from "../api";
 import { User } from "../composables/useAuth";
 import { isEmpty } from "lodash";
 import { isValidPassword } from "../utils/validate";
-import { toOptions } from "../utils/arrays";
 
 const props = defineProps<{ user?: User; onFinish: onFinishHandler }>();
 const editMode = computed(() => !isEmpty(props.user));

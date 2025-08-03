@@ -49,7 +49,7 @@
         v-if="indexed"
       />
       <el-table-column
-        v-for="column of columns"
+        v-for="(column, index) of columns"
         :key="column.label"
         v-bind="column"
       >
@@ -59,8 +59,8 @@
           </slot>
           <!-- Otherwise, render the default content -->
           <template v-else>
-            <span v-if="column.formatter">{{ column.formatter(scope.row, column, scope.row[column.prop]) }}</span>
-            <span v-else>{{ scope.row[column.prop] }}</span>
+            <span v-if="column.formatter && column.prop">{{ column.formatter(scope.row, column as TableColumnCtx<any>, scope.row[column.prop], index) }}</span>
+            <span v-else-if="column.prop">{{ scope.row[column.prop] }}</span>
           </template>
         </template>
       </el-table-column>

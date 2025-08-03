@@ -261,6 +261,45 @@ class ApiClient {
   async delete(url: string, params?: ApiRequestParam, data?: ApiRequestData,): Promise<void> {
     await this.execFetch(url, "DELETE", params, data);
   }
+
+  /**
+   * Upload a blob/file using FormData.
+   *
+   * @param blob - The blob/file to upload.
+   * @param uri - The upload endpoint (defaults to '/uploads').
+   * @returns A Promise that resolves to the upload response.
+   */
+  async uploadBlob<T = any>(blob: Blob, uri = '/uploads'): Promise<T> {
+    this.triggerEvent("beforeRequest", { uri, method: 'POST', data: blob });
+    const fullURL = await this.expandPath(uri);
+    
+    const formData = new FormData();
+    formData.append('file', blob);
+    
+    const headers = new Headers();
+    const auth = useAuth();
+    if(auth.isAuthenticated.value) {
+      headers.append('Authorization', `Bearer ${auth.token.value}`);
+    }
+    
+    const options: RequestInit = {
+      method: 'POST',
+      headers,
+      body: formData,
+    };
+    
+    let response = undefined;
+    try {
+      response = await fetch(fullURL, options);
+      this.triggerEvent("afterRequest", { uri, method: 'POST', data: blob, response });
+      return this.handleResponse<T>(response);
+    } catch (e) {
+      if(/NetworkError|Failed to fetch/i.test(`${e}`)) {
+        this.triggerEvent("serverClash")
+      }
+      return this.handleResponse();
+    }
+  }
 }
 
 export default new ApiClient();

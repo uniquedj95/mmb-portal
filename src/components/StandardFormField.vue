@@ -7,7 +7,6 @@
   <el-col :span="24" v-else>
     <el-form-item :rules="field.rules" :prop="field.id" :label="field.label">
       <component
-        v-if="field.type !== 'repeatable'"
         size="large"
         :is="getComponent(field.type)"
         :type="field.type !== 'select' ? field.type : ''"
@@ -20,19 +19,6 @@
           <el-option v-for="item in activeOptions" :key="item.value" v-bind="item" />
         </template>
       </component>
-
-      <!-- Repeatable Input Set -->
-      <repeatable-input
-        v-else
-        :model-value="formData"
-        @update:model-value="updateFormData"
-        :base-id="field.id"
-        :fields="field.repeatableConfig?.fields || []"
-        :item-label="field.repeatableConfig?.itemLabel || 'Item'"
-        :min-items="field.repeatableConfig?.minItems || 1"
-        :max-items="field.repeatableConfig?.maxItems || 10"
-        :initial-items="field.repeatableConfig?.initialItems || 1"
-      />
     </el-form-item>
   </el-col>
 </template>
@@ -40,10 +26,8 @@
 <script setup lang="ts">
 import { PropType, ref } from 'vue';
 import { ElCol, ElFormItem, ElOption } from 'element-plus';
-import { FormData, FormFieldType, FormFields, FormField, Option, RepeatableFieldConfig } from '../interfaces/standard_form';
-import LocationPicker from './inputs/LocationPicker.vue';
+import { FormData, FormFieldType, FormFields, FormField, Option } from '../interfaces/standard_form';
 import ImagePicker from './inputs/ImagePicker.vue';
-import RepeatableInput from './inputs/RepeatableInput.vue';
 
 const props = defineProps({
   field: {
@@ -57,11 +41,6 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['update:formData']);
-
-// Method to update form data from repeatable input set
-const updateFormData = (newFormData: FormData) => {
-  emit('update:formData', newFormData);
-};
 
 const activeOptions = ref(initFieldOptions());
 
@@ -96,12 +75,8 @@ function getComponent(type: FormFieldType) {
     case "month":
     case "year":
       return 'ElDatePicker';
-    case 'location':
-      return LocationPicker;
     case 'image':
       return ImagePicker;
-    case 'repeatable':
-      return RepeatableInput;
     default:
       return 'ElInput';
   }

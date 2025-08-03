@@ -16,7 +16,11 @@ import { ElText, ElDivider, ElIcon } from "element-plus";
 import { ListItemI } from "../interfaces";
 import { computed } from "vue";
 
-const props = defineProps<ListItemI>();
+interface Props extends ListItemI {
+  placement?: string;
+}
+
+const props = defineProps<Props>();
 
 const justify = computed(() =>`justify-${props.placement ?? "start"}`)
 

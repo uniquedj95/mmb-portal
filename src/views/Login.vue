@@ -30,7 +30,7 @@ const rules = reactive<FormRules<typeof form>>({
   identifier: [
     { required: true, message: "Email or phone number is required", trigger: 'blur' },
     { 
-      validator: (rule, value, callback) => {
+      validator: (_rule, value, callback) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         const phoneRegex = /^\+?[1-9]\d{1,14}$/;
         if (!emailRegex.test(value) && !phoneRegex.test(value)) {

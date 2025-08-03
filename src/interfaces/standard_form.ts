@@ -15,8 +15,7 @@ export type FormFieldType =
 | "checkbox"
 | "textarea"
 | "location"
-| "image"
-| "repeatable";
+| "image";
 
 export type FormData = Record<string, any>;
 export type FormFields = Array<FormField | FormFields>;
@@ -32,24 +31,6 @@ export interface Option {
   other?: Record<string, any>;
 }
 
-export interface RepeatableFieldConfig {
-  fields: Array<{
-    id: string;
-    label: string;
-    type: Exclude<FormFieldType, 'repeatable'>;
-    span?: number;
-    rules?: Array<FormItemRule>;
-    props?: Record<string, any>;
-    options?: Array<Option>;
-    placeholder?: string;
-    defaultValue?: any;
-    onChange?: (value: any, index: number) => void;
-  }>;
-  itemLabel?: string;
-  minItems?: number;
-  maxItems?: number;
-  initialItems?: number;
-}
 
 export interface FormField {
   id: string;
@@ -60,7 +41,6 @@ export interface FormField {
   options?: Array<Option>;
   remoteMethod?: (query: string, data: FormData) => Promise<Array<Option>>;
   defaultValue?: any | (() => any);
-  repeatableConfig?: RepeatableFieldConfig; // Configuration for repeatable fields
 }
 
 export interface FormStep {

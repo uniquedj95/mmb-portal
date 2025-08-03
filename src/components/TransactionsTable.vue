@@ -50,14 +50,14 @@
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted } from 'vue';
-import { ElMessage } from 'element-plus';
-import TransactionService from '../services/transactions';
+<script setup lang="ts">
+import { ref, onMounted, PropType } from 'vue';
+import { ElMessage, TableColumnCtx } from 'element-plus';
+import TransactionService, { Transaction } from '../services/transactions';
 
 const props = defineProps({
   columns: {
-    type: Array,
+    type: Array as PropType<Array<Partial<TableColumnCtx<any>>>>,
     required: true
   },
   itemsPerPage: {
@@ -66,7 +66,7 @@ const props = defineProps({
   }
 });
 
-const transactions = ref([]);
+const transactions = ref<Array<Transaction>>([]);
 const loading = ref(false);
 const currentPage = ref(1);
 const pageSize = ref(props.itemsPerPage);
@@ -74,12 +74,12 @@ const total = ref(0);
 
 const transactionService = new TransactionService();
 
-const fetchTransactions = async () => {
+async function fetchTransactions() {
   loading.value = true;
   try {
     const response = await transactionService.getPendingTransactions();
-    transactions.value = response.data || response;
-    total.value = response.total || response.length;
+    transactions.value = response.data;
+    total.value = response.meta.totalItems;
   } catch (error) {
     console.error('Error fetching transactions:', error);
     ElMessage.error('Failed to fetch transactions');
@@ -88,7 +88,7 @@ const fetchTransactions = async () => {
   }
 };
 
-const approveTransaction = async (transaction) => {
+async function approveTransaction(transaction: Transaction) {
   try {
     await transactionService.approveTransaction(transaction.id);
     ElMessage.success('Transaction approved successfully');
@@ -99,7 +99,7 @@ const approveTransaction = async (transaction) => {
   }
 };
 
-const rejectTransaction = async (transaction) => {
+async function rejectTransaction(transaction: Transaction) {
   try {
     await transactionService.rejectTransaction(transaction.id, 'Rejected by admin');
     ElMessage.success('Transaction rejected successfully');
@@ -110,15 +110,15 @@ const rejectTransaction = async (transaction) => {
   }
 };
 
-const handleSizeChange = (val) => {
+function handleSizeChange(val: number) {
   pageSize.value = val;
   fetchTransactions();
-};
+}
 
-const handleCurrentChange = (val) => {
+function handleCurrentChange(val: number) {
   currentPage.value = val;
   fetchTransactions();
-};
+}
 
 onMounted(() => {
   fetchTransactions();

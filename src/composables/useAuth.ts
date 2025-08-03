@@ -1,6 +1,12 @@
 import { ref, computed } from 'vue';
 import ApiClient from '../api';
 
+export interface UserPermission {
+  id: number;
+  name: string;
+  display_name: string;
+}
+
 export interface User {
   id: number;
   name: string;
@@ -8,6 +14,7 @@ export interface User {
   email_verified_at: string | null;
   deactivated_at: string | null;
   role?: string;
+  permissions?: UserPermission[];
   created_at: string;
   updated_at: string;
 }
