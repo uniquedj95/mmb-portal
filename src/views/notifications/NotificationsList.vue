@@ -39,12 +39,12 @@
           v-for="notification in filteredNotifications" 
           :key="notification.id"
           shadow="hover"
-          :class="{ 'notification-unread': !notification.isRead }"
+          :class="{ 'notification-unread': !notification.read }"
           class="notification-item"
           @click="markAsRead(notification.id)"
         >
           <div class="notification-content-wrapper">
-            <div class="notification-icon" :class="notification.type">
+            <div class="notification-icon" :class="getNotificationTypeClass(notification.type)">
               <el-icon>
                 <component :is="getIconComponent(notification.type)"></component>
               </el-icon>
@@ -52,7 +52,7 @@
             <div class="notification-content">
               <h3>{{ notification.title }}</h3>
               <p>{{ notification.message }}</p>
-              <span class="timestamp">{{ formatDate(notification.timestamp) }}</span>
+              <span class="timestamp">{{ formatDate(notification.createdAt) }}</span>
             </div>
             <div class="notification-actions">
               <el-button @click.stop="deleteNotification(notification.id)" type="danger" size="small">
@@ -84,7 +84,8 @@ import {
   ElCard, 
   ElEmpty, 
   ElPagination, 
-  ElIcon
+  ElIcon,
+  ElMessage
 } from 'element-plus'
 import {
   Message,
@@ -92,46 +93,43 @@ import {
   Warning,
   SuccessFilled
 } from '@element-plus/icons-vue'
+import NotificationService, { type Notification } from '../../services/notifications'
 
-const notifications = ref([])
+const notifications = ref<Notification[]>([])
 const loading = ref(true)
 const currentFilter = ref('all')
 const currentPage = ref(1)
 const pageSize = 10
 
+const notificationService = new NotificationService()
+
 // Fetch notifications from API
 const fetchNotifications = async () => {
   loading.value = true
   try {
-    // Replace with actual API call
-    const response = await new Promise(resolve => {
-      setTimeout(() => {
-        resolve({
-          data: [
-            { id: 1, title: 'New message', message: 'You have a new message from admin', timestamp: new Date(), isRead: false, type: 'message' },
-            { id: 2, title: 'System update', message: 'System will be updated tomorrow', timestamp: new Date(Date.now() - 86400000), isRead: true, type: 'info' },
-            { id: 3, title: 'Alert', message: 'Unusual activity detected on your account', timestamp: new Date(Date.now() - 172800000), isRead: false, type: 'warning' }
-          ]
-        })
-      }, 500)
+    const response = await notificationService.getNotifications({
+      limit: 100, // Get more for local filtering
+      offset: 0
     })
     notifications.value = response.data
   } catch (error) {
     console.error('Error fetching notifications:', error)
+    ElMessage.error('Failed to fetch notifications')
   } finally {
     loading.value = false
   }
 }
 
 // Mark notification as read
-const markAsRead = async (id) => {
+const markAsRead = async (id: string) => {
   const notification = notifications.value.find(n => n.id === id)
-  if (notification && !notification.isRead) {
+  if (notification && !notification.read) {
     try {
-      // await api.markAsRead(id)
-      notification.isRead = true
+      await notificationService.markAsRead(id)
+      notification.read = true
     } catch (error) {
       console.error('Error marking notification as read:', error)
+      ElMessage.error('Failed to mark notification as read')
     }
   }
 }
@@ -139,41 +137,58 @@ const markAsRead = async (id) => {
 // Mark all notifications as read
 const markAllAsRead = async () => {
   try {
-    // await api.markAllAsRead()
-    notifications.value = notifications.value.map(n => ({ ...n, isRead: true }))
+    await notificationService.markAllAsRead()
+    notifications.value = notifications.value.map(n => ({ ...n, read: true }))
+    ElMessage.success('All notifications marked as read')
   } catch (error) {
     console.error('Error marking all notifications as read:', error)
+    ElMessage.error('Failed to mark all notifications as read')
   }
 }
 
 // Delete notification
-const deleteNotification = async (id) => {
+const deleteNotification = async (id: string) => {
   try {
-    // await api.deleteNotification(id)
+    await notificationService.deleteNotification(id)
     notifications.value = notifications.value.filter(n => n.id !== id)
+    ElMessage.success('Notification deleted successfully')
   } catch (error) {
     console.error('Error deleting notification:', error)
+    ElMessage.error('Failed to delete notification')
   }
 }
 
 // Format date
-const formatDate = (date) => {
+const formatDate = (date: string) => {
   return new Date(date).toLocaleString()
 }
 
 // Get icon component based on notification type
-const getIconComponent = (type) => {
+const getIconComponent = (type: string) => {
   switch (type) {
-    case 'message': return Message
-    case 'warning': return Warning
-    case 'success': return SuccessFilled
-    case 'info':
+    case 'SAVINGS_REMINDER': return Message
+    case 'LOAN_APPROVAL': return SuccessFilled
+    case 'REPAYMENT_DUE': return Warning
+    case 'GROUP_UPDATE': return InfoFilled
+    case 'DONOR_REPORT': return InfoFilled
     default: return InfoFilled
   }
 }
 
+// Get CSS class for notification type
+const getNotificationTypeClass = (type: string) => {
+  switch (type) {
+    case 'SAVINGS_REMINDER': return 'message'
+    case 'LOAN_APPROVAL': return 'success'
+    case 'REPAYMENT_DUE': return 'warning'
+    case 'GROUP_UPDATE': return 'info'
+    case 'DONOR_REPORT': return 'info'
+    default: return 'info'
+  }
+}
+
 // Handle page change
-const handlePageChange = (page) => {
+const handlePageChange = (page: number) => {
   currentPage.value = page
 }
 
@@ -182,13 +197,13 @@ const filteredNotifications = computed(() => {
   let filtered = [...notifications.value]
   
   if (currentFilter.value === 'read') {
-    filtered = filtered.filter(n => n.isRead)
+    filtered = filtered.filter(n => n.read)
   } else if (currentFilter.value === 'unread') {
-    filtered = filtered.filter(n => !n.isRead)
+    filtered = filtered.filter(n => !n.read)
   }
   
   // Sort by date, newest first
-  filtered.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+  filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
   
   // Apply pagination
   const startIdx = (currentPage.value - 1) * pageSize
@@ -200,16 +215,16 @@ const totalPages = computed(() => {
   let filtered = [...notifications.value]
   
   if (currentFilter.value === 'read') {
-    filtered = filtered.filter(n => n.isRead)
+    filtered = filtered.filter(n => n.read)
   } else if (currentFilter.value === 'unread') {
-    filtered = filtered.filter(n => !n.isRead)
+    filtered = filtered.filter(n => !n.read)
   }
   
   return Math.ceil(filtered.length / pageSize)
 })
 
 const hasUnread = computed(() => {
-  return notifications.value.some(n => !n.isRead)
+  return notifications.value.some(n => !n.read)
 })
 
 onMounted(() => {

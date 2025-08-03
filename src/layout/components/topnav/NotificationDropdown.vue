@@ -68,21 +68,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Bell } from '@element-plus/icons-vue';
-import { ElPopover, ElMenuItem, ElBadge, ElIcon, ElButton, ElScrollbar, ElSkeleton } from 'element-plus';
-
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: string;
-  read: boolean;
-  createdAt: string;
-}
+import { ElPopover, ElMenuItem, ElBadge, ElIcon, ElButton, ElScrollbar, ElSkeleton, ElMessage } from 'element-plus';
+import NotificationService, { type Notification } from '../../../services/notifications';
 
 const notifications = ref<Notification[]>([]);
 const loading = ref(false);
+let pollInterval: NodeJS.Timeout | null = null;
+
+const notificationService = new NotificationService();
 
 const unreadCount = computed(() => 
   notifications.value.filter(n => !n.read).length
@@ -91,12 +86,11 @@ const unreadCount = computed(() =>
 const fetchNotifications = async () => {
   loading.value = true;
   try {
-    // Replace with your actual API call
-    const response = await fetch('/api/notifications?limit=10');
-    const data = await response.json();
-    notifications.value = data.data || [];
+    const response = await notificationService.getRecentNotifications();
+    notifications.value = response.data;
   } catch (error) {
     console.error('Failed to fetch notifications:', error);
+    ElMessage.error('Failed to fetch notifications');
   } finally {
     loading.value = false;
   }
@@ -106,23 +100,22 @@ const markAsRead = async (notification: Notification) => {
   if (notification.read) return;
   
   try {
-    await fetch(`/api/notifications/${notification.id}/read`, {
-      method: 'PATCH'
-    });
+    await notificationService.markAsRead(notification.id);
     notification.read = true;
   } catch (error) {
     console.error('Failed to mark notification as read:', error);
+    ElMessage.error('Failed to mark notification as read');
   }
 };
 
 const markAllAsRead = async () => {
   try {
-    await fetch('/api/notifications/mark-all-read', {
-      method: 'PATCH'
-    });
+    await notificationService.markAllAsRead();
     notifications.value.forEach(n => n.read = true);
+    ElMessage.success('All notifications marked as read');
   } catch (error) {
     console.error('Failed to mark all notifications as read:', error);
+    ElMessage.error('Failed to mark all notifications as read');
   }
 };
 
@@ -142,14 +135,24 @@ const formatTime = (dateString: string) => {
 
 onMounted(() => {
   fetchNotifications();
-  // Set up polling for new notifications
-  setInterval(fetchNotifications, 30000); // Poll every 30 seconds
+  // Set up polling for new notifications every 30 seconds
+  pollInterval = setInterval(fetchNotifications, 30000);
+});
+
+onUnmounted(() => {
+  if (pollInterval) {
+    clearInterval(pollInterval);
+  }
 });
 </script>
 
 <style scoped>
 .notification-menu-item {
   cursor: pointer;
+}
+
+.navbar-icon {
+  font-size: 18px;
 }
 
 .notifications-panel {
