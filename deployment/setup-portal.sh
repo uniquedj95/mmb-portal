@@ -89,10 +89,10 @@ npm run build
 print_status "Creating nginx configuration for portal..."
 
 # Backup existing nginx config
-$SUDO_CMD cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.backup.$(date +%Y%m%d-%H%M%S)
+$SUDO_CMD cp /etc/nginx/sites-available/mmb-api /etc/nginx/sites-available/mmb-api.backup.$(date +%Y%m%d-%H%M%S)
 
 # Create new nginx config that includes both API and Portal
-$SUDO_CMD tee /etc/nginx/sites-available/default > /dev/null << 'EOF'
+$SUDO_CMD tee /etc/nginx/sites-available/mmb-api > /dev/null << 'EOF'
 # Rate limiting configuration
 limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
 limit_req_zone $binary_remote_addr zone=portal:10m rate=30r/s;
