@@ -93,10 +93,6 @@ $SUDO_CMD cp /etc/nginx/sites-available/mmb-api /etc/nginx/sites-available/mmb-a
 
 # Create new nginx config that includes both API and Portal
 $SUDO_CMD tee /etc/nginx/sites-available/mmb-api > /dev/null << 'EOF'
-# Rate limiting configuration
-limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
-limit_req_zone $binary_remote_addr zone=portal:10m rate=30r/s;
-
 server {
     listen 80;
     server_name _;  # Accept any server name (IP address)
@@ -120,9 +116,6 @@ server {
     location / {
         root /var/www/mmb-portal/dist;
         try_files $uri $uri/ /index.html;
-        
-        # Rate limiting for portal
-        limit_req zone=portal burst=50 nodelay;
         
         # Cache static assets
         location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
@@ -150,9 +143,6 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
         proxy_read_timeout 86400;
-        
-        # Rate limiting for API
-        limit_req zone=api burst=20 nodelay;
     }
 
     # API documentation
